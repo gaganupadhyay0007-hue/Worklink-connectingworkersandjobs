@@ -1,2 +1,303 @@
 # Worklink-connectingworkersandjobs
-App for workers to find work and job
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkLinks Enterprise</title>
+
+<style>
+:root{
+--primary:#4f46e5;
+--dark:#0f172a;
+--light:#f1f5f9;
+--card:#ffffff;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI,sans-serif}
+
+body{
+background:linear-gradient(135deg,#e0e7ff,#f8fafc);
+min-height:100vh;
+}
+
+nav{
+background:var(--dark);
+color:white;
+padding:15px 25px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+nav .nav-links button{
+background:none;
+border:none;
+color:white;
+margin-left:15px;
+cursor:pointer;
+font-weight:500;
+}
+
+nav .nav-links button:hover{color:#38bdf8}
+
+.container{
+max-width:1200px;
+margin:30px auto;
+padding:20px;
+}
+
+.card{
+background:var(--card);
+padding:25px;
+border-radius:16px;
+box-shadow:0 15px 35px rgba(0,0,0,0.08);
+margin-bottom:25px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
+}
+
+input,textarea,select{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+border:1px solid #d1d5db;
+}
+
+button.primary{
+background:var(--primary);
+color:white;
+border:none;
+padding:12px;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+width:100%;
+margin-top:15px;
+}
+
+button.primary:hover{
+background:#3730a3;
+}
+
+button.secondary{
+background:#111827;
+color:white;
+border:none;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.hidden{display:none}
+
+.badge{
+display:inline-block;
+padding:5px 10px;
+border-radius:20px;
+font-size:12px;
+color:white;
+background:#2563eb;
+}
+
+.status-pending{background:#f59e0b}
+.status-accepted{background:#10b981}
+.status-rejected{background:#ef4444}
+</style>
+</head>
+
+<body>
+
+<nav>
+<div><b>WorkLinks Enterprise</b></div>
+<div class="nav-links">
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('jobs')">Jobs</button>
+<button onclick="showPage('post')">Post</button>
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="logout()">Logout</button>
+</div>
+</nav>
+
+<div class="container">
+
+<div id="auth">
+<div class="card">
+<h2>Login</h2>
+<input type="text" id="loginUser" placeholder="Username">
+<input type="password" id="loginPass" placeholder="Password">
+<button class="primary" onclick="login()">Login</button>
+<p onclick="toggleAuth()" style="color:var(--primary);cursor:pointer;margin-top:10px;">Create Account</p>
+</div>
+</div>
+
+<div id="signup" class="hidden">
+<div class="card">
+<h2>Signup</h2>
+<input type="text" id="signupUser" placeholder="Username">
+<input type="password" id="signupPass" placeholder="Password">
+<select id="role">
+<option value="user">Job Seeker</option>
+<option value="recruiter">Recruiter</option>
+<option value="admin">Admin</option>
+</select>
+<button class="primary" onclick="signup()">Register</button>
+<p onclick="toggleAuth()" style="color:var(--primary);cursor:pointer;margin-top:10px;">Back to Login</p>
+</div>
+</div>
+
+<div id="home" class="hidden">
+<div class="card">
+<h2>Enterprise Job Management System</h2>
+<p>Multi-role platform with applications, tracking, and analytics dashboard.</p>
+</div>
+</div>
+
+<div id="jobs" class="hidden">
+<div class="card">
+<h2>Job Listings</h2>
+<input type="text" id="search" placeholder="Search jobs..." onkeyup="displayJobs()">
+<div id="jobList" class="grid" style="margin-top:20px;"></div>
+</div>
+</div>
+
+<div id="post" class="hidden">
+<div class="card">
+<h2>Post Job</h2>
+<input type="text" id="jobTitle" placeholder="Job Title">
+<input type="text" id="jobCompany" placeholder="Company Name">
+<textarea id="jobDesc" placeholder="Job Description"></textarea>
+<button class="primary" onclick="postJob()">Publish</button>
+</div>
+</div>
+
+<div id="dashboard" class="hidden">
+<div class="card">
+<h2>Dashboard</h2>
+<p id="userInfo"></p>
+<p>Total Users: <span id="totalUsers"></span></p>
+<p>Total Jobs: <span id="totalJobs"></span></p>
+<p>Total Applications: <span id="totalApps"></span></p>
+</div>
+<div class="card">
+<h2>My Applications</h2>
+<div id="appList"></div>
+</div>
+</div>
+
+</div>
+
+<script>
+
+let users=JSON.parse(localStorage.getItem("users"))||[];
+let jobs=JSON.parse(localStorage.getItem("jobs"))||[];
+let applications=JSON.parse(localStorage.getItem("applications"))||[];
+let currentUser=null;
+
+function showPage(id){
+document.querySelectorAll(".container > div").forEach(d=>d.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+}
+
+function toggleAuth(){
+document.getElementById("auth").classList.toggle("hidden");
+document.getElementById("signup").classList.toggle("hidden");
+}
+
+function signup(){
+let user=document.getElementById("signupUser").value.trim();
+let pass=document.getElementById("signupPass").value.trim();
+let role=document.getElementById("role").value;
+if(!user||!pass)return;
+if(users.find(u=>u.user===user))return;
+users.push({user,pass,role});
+localStorage.setItem("users",JSON.stringify(users));
+toggleAuth();
+}
+
+function login(){
+let user=document.getElementById("loginUser").value.trim();
+let pass=document.getElementById("loginPass").value.trim();
+let found=users.find(u=>u.user===user&&u.pass===pass);
+if(!found)return;
+currentUser=found;
+showPage("home");
+updateDashboard();
+displayJobs();
+}
+
+function logout(){location.reload();}
+
+function postJob(){
+if(!currentUser||currentUser.role!=="admin")return;
+let title=document.getElementById("jobTitle").value.trim();
+let company=document.getElementById("jobCompany").value.trim();
+let desc=document.getElementById("jobDesc").value.trim();
+if(!title||!company||!desc)return;
+let id=Date.now();
+jobs.push({id,title,company,desc});
+localStorage.setItem("jobs",JSON.stringify(jobs));
+displayJobs();
+}
+
+function applyJob(id){
+if(!currentUser||currentUser.role!=="user")return;
+applications.push({id:Date.now(),jobId:id,user:currentUser.user,status:"Pending"});
+localStorage.setItem("applications",JSON.stringify(applications));
+updateDashboard();
+}
+
+function displayJobs(){
+let list=document.getElementById("jobList");
+if(!list)return;
+let search=document.getElementById("search")?.value.toLowerCase()||"";
+list.innerHTML="";
+jobs.filter(j=>j.title.toLowerCase().includes(search)||j.company.toLowerCase().includes(search))
+.forEach(job=>{
+list.innerHTML+=`
+<div class="card">
+<h3>${job.title}</h3>
+<p>${job.company}</p>
+<p>${job.desc}</p>
+<button class="secondary" onclick="applyJob(${job.id})">Apply</button>
+</div>`;
+});
+}
+
+function updateDashboard(){
+if(!currentUser)return;
+document.getElementById("userInfo").innerText=
+"User: "+currentUser.user+" | Role: "+currentUser.role;
+document.getElementById("totalUsers").innerText=users.length;
+document.getElementById("totalJobs").innerText=jobs.length;
+document.getElementById("totalApps").innerText=applications.length;
+
+let appList=document.getElementById("appList");
+if(!appList)return;
+appList.innerHTML="";
+applications.filter(a=>a.user===currentUser.user)
+.forEach(a=>{
+let job=jobs.find(j=>j.id===a.jobId);
+if(job){
+appList.innerHTML+=`
+<div style="margin-top:10px;">
+<b>${job.title}</b>
+<span class="badge status-${a.status.toLowerCase()}">${a.status}</span>
+</div>`;
+}
+});
+}
+
+</script>
+
+</body>
+</html>
